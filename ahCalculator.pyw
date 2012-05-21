@@ -6,7 +6,7 @@ from tkinter.tix import *
 from tkinter import font
             
 root = Tk()
-root.title('AH')
+root.title('AH Calculator')
             
 class dbfHandler:
    
@@ -51,7 +51,7 @@ class dbfHandler:
       
       return x
       
-dbf = dbfHandler('C:/BCC Temp/AH.dbf')
+dbf = dbfHandler('ahCalcHistory.db')
       
 def refresh():
    spentVar.set(dbf.getTotal('Bought'))
