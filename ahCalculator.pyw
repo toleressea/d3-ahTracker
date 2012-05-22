@@ -3,6 +3,7 @@ import sqlite3
 from tkinter import *
 from tkinter import ttk
 from tkinter.tix import *
+from tkinter import messagebox
 from tkinter import font
             
 root = Tk()
@@ -21,15 +22,20 @@ class dbfHandler:
       self.conn.commit()
       
    def insertTrans(self):
-      self.c.execute(
-         '''INSERT INTO trans VALUES('{date}', '{type}', {amount})'''.format(
-            date=dateVar.get(),
-            type=typeVar.get(),
-            amount=amountVar.get()
+      (d, t, a) = (dateVar.get(), typeVar.get(), amountVar.get())
+      if len(d) < 1 or len(t) < 1 or len(a) < 1:
+         messagebox.showerror(title='Field Empty', message='Please fill out all empty fields.')
+      else:
+         self.c.execute(
+            '''INSERT INTO trans VALUES('{date}', '{type}', {amount})'''.format(
+               date=d,
+               type=t,
+               amount=int(a)
+               )
             )
-         )
-      self.conn.commit()
-      refresh()
+         self.conn.commit()
+         amountEntry['focus'] = True
+         refresh()
          
    def getTotal(self, t):
       self.c.execute(
@@ -42,7 +48,7 @@ class dbfHandler:
       return sum
       
    def showAll(self):
-      self.c.execute('''SELECT * FROM trans ORDER BY date''')
+      self.c.execute('''SELECT * FROM trans ORDER BY {0}'''.format(orderVar.get()))
       all = self.c.fetchall()
       
       x = '{0}{1}{2}\n\n'.format('Date'.ljust(15), 'Type'.ljust(15), 'Amount'.ljust(15))
@@ -53,7 +59,7 @@ class dbfHandler:
       
 dbf = dbfHandler('ahCalcHistory.db')
       
-def refresh():
+def refresh(*args):
    spentVar.set(dbf.getTotal('Bought'))
    grossVar.set(dbf.getTotal('Sold'))
    profitVar.set(grossVar.get() - spentVar.get())
@@ -61,15 +67,17 @@ def refresh():
    x.set(dbf.showAll())
       
 dateVar = StringVar()
+orderVar = StringVar()
 typeVar = StringVar()
-amountVar = IntVar()
+amountVar = StringVar()
 grossVar = IntVar()
 spentVar = IntVar()
 blizVar = IntVar()
 profitVar = IntVar()
 
+orderVar.set('Date')
 typeVar.set('Bought')
-amountVar.set('')
+dateVar.set('yyyymmdd')
 x = StringVar()
 x.set('')
       
@@ -90,7 +98,8 @@ addBtn = ttk.Button(addFrame, text='Add Transaction', command=dbf.insertTrans).g
 
 dateEntry = ttk.Entry(addFrame, width=11, textvariable=dateVar).grid(column=1, row=0, sticky=(E))
 typeEntry = ttk.Combobox(addFrame, width=8, textvariable=typeVar, values=('Bought', 'Sold')).grid(column=1, row=1, sticky=(E))
-amountEntry = ttk.Entry(addFrame, width=11, textvariable=amountVar).grid(column=1, row=2, sticky=(E))
+amountEntry = ttk.Entry(addFrame, width=11, textvariable=amountVar)
+amountEntry.grid(column=1, row=2, sticky=(E))
 
 grossTitle = ttk.Label(statFrame, text='Total Income').grid(column=0, row=0, sticky=(W))
 spentTitle = ttk.Label(statFrame, text='Total Spent').grid(column=2, row=0, sticky=(W))
@@ -104,12 +113,18 @@ statSep = ttk.Separator(statFrame, orient=HORIZONTAL).grid(column=0, row=2, colu
 profitVal = ttk.Label(statFrame, textvariable=profitVar).grid(column=0, row=4, sticky=(E, W))
 blizVal = ttk.Label(statFrame, textvariable=blizVar).grid(column=2, row=4, sticky=(E, W))
 
+orderByLbl = ttk.Label(listFrame, text='Order By: ').grid(padx=100, column=1, row=0, sticky=(E))
+orderByCombo = ttk.Combobox(listFrame, width=10, textvariable=orderVar, values=('Date', 'Type', 'Amount'))
+orderByCombo.grid(column=1, row=0, sticky=(E))
+
 swinFont = font.Font(family='Consolas', size='8')
 swin = ScrolledWindow(listFrame, width=300, height=250)
 swin.grid(column=0,row=2, columnspan=2)
 descript = swin.window
 ttk.Label(descript, textvariable=x, font = swinFont).grid(column=0, row=0)
-            
+
+orderByCombo.bind('<<ComboboxSelected>>', refresh)
+
 refresh()
 
 if __name__ == '__main__':
