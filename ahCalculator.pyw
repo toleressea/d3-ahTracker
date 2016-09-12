@@ -34,7 +34,7 @@ class dbfHandler:
                )
             )
          self.conn.commit()
-         amountEntry['focus'] = True
+         amountEntry['validate'] = 'focus'
          refresh()
          
    def getTotal(self, t):
